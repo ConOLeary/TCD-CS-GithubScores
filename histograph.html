@@ -9,8 +9,18 @@
 
 <script>
 
+// --------------Read functionality--------------------------
+//Ensures there will be no 'console is undefined' errors
+
+
+console.log("dasdsaadsadsda");
+var fs = require('fs');
+var textByLine = fs.readFileSync('GithubScores|2019-11-13|19:19:56.txt').toString().split("\n");
+alert(textByLine[1]);
+
+// -----------------------------------------------------
 // set the dimensions and margins of the graph
-var margin = {top: 10, right: 30, bottom: 30, left: 40},
+var margin = {top: 100, right: 30, bottom: 30, left: 100},
     width = 460 - margin.left - margin.right,
     height = 400 - margin.top - margin.bottom;
 
