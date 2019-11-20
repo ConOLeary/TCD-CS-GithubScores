@@ -1,13 +1,15 @@
 import pygal
 import json
 import operator
+import sys
 
 class CsStudent:
     def __init__(self, name, year, followers, starScore):
         self.name = name
-        self.year = year
-        self.followers = followers
-        self.starScore = starScore
+        self.year = int(year)
+        self.followers = int(followers)
+        self.starScore = int(starScore)
+        self.githubScore = followers + starScore
         if(followers != 0):
             self.ratio = float(starScore)/float(followers)
         if(followers == 0):
@@ -15,26 +17,27 @@ class CsStudent:
 csStudents = []
 amountOfStudents = 0
 amountOfYears = 5
-widthHeightScaling = 2
+maxHighlightable = 2
+widthHeightScaling = 0.02
 yearScores = [0,0,0,0,0] # year = offset
 
-with open('Data/GithubScores|2019-11-16|01:19:58.json') as json_file:
+with open('Data/GithubScores|2019-11-20|17:50:39.json') as json_file:
     data = json.load(json_file)
     for entry in data['csStudents']:
         csStudent = CsStudent(entry['name'],entry['year'],int(entry['followers']),int(entry['starScore']))
         if(csStudent.year == 3):
-            yearScores[3] += (csStudent.followers + csStudent.starScore)
+            yearScores[3] += csStudent.githubScore
         if(csStudent.year == 4):
-            yearScores[4] += csStudent.followers + csStudent.starScore
+            yearScores[4] += csStudent.githubScore
         csStudents.append(csStudent)
         amountOfStudents += 1
 
-csStudents.sort(key=lambda x: int(x.ratio))
-for csStudent in csStudents:
-    print('Name: ' + csStudent.name)
-    print('Year: ' + str(csStudent.year))
-    print('Followers: ' + str(csStudent.followers))
-    print("StarScore: "+str(csStudent.starScore)+"\n")
+csStudents.sort(key=lambda x: int(x.githubScore))
+# for csStudent in csStudents:
+#     print('Name: ' + csStudent.name)
+#     print('Year: ' + str(csStudent.year))
+#     print('Followers: ' + str(csStudent.followers))
+#     print("StarScore: "+str(csStudent.starScore)+"\n")
 
 #------------BAR_CHAR-------------------------------------
 '''
@@ -52,31 +55,51 @@ bar_chart.render_to_file('bar_chart.svg')
 '''
 #----------HISTO-------------------------------------------
 def calculateWidth(y):
-    #return round((1 + y * widthHeightScaling), 2)
-    return 100 + (y * widthHeightScaling * widthHeightScaling)
+    return 1 + (y * widthHeightScaling)
 
-yearBarSets = [(0,0,0)] * amountOfYears
-for i in range(amountOfYears):
+
+highlightCount = len(sys.argv)-1
+if(highlightCount > maxHighlightable):
+    highlightCount = maxHighlightable
+highlightedScores = [0] * highlightCount
+highlightedStudents = [0] * highlightCount
+for i in range(highlightCount):
+    highlightedStudents[i] = str(sys.argv[i+1])
+    #print(highlightedStudents[i])
+
+print("amountOfYears:"+str(amountOfYears))
+print("highlightCount"+str(highlightCount))
+yearBarSets = [(0,0,0)] * (amountOfYears + 1 + highlightCount)
+for i in range(amountOfYears + 1 + highlightCount):
     yearBarSets[i] = [(0,0,0)] * amountOfStudents
+    #print(str(yearBarSets[i])+"\n\n\n")
 
-yearBarSets[1][1] = (1,1,1)
 currentX = 0
-
 # (height, xFrom, xTo)
 for i in range(amountOfStudents):
     student = csStudents[i]
-    ratioScore = student.ratio
-    width = calculateWidth(ratioScore)
-    #if(ratioScore == 0): ratioScore = 0.1
-    yearBarSets[int(student.year)][i] = (ratioScore, currentX, currentX + width)
+    githubScore = student.githubScore
+    width = calculateWidth(githubScore)
+    if(githubScore == 0): githubScore = 0.2
+    matched = False
+    for j in range(highlightCount):
+        if(student.name == highlightedStudents[j]):
+            yearBarSets[amountOfYears+j][i] = (githubScore, currentX, currentX + width)
+            highlightedScores[j] = githubScore
+            matched = True
+    if(matched == False):
+        yearBarSets[int(student.year)][i] = (githubScore, currentX, currentX + width)
     currentX += width
 
 
 for i in range(amountOfStudents):
-    print(str(yearBarSets[0][i])+" "+str(yearBarSets[1][i])+" "+str(yearBarSets[2][i])+" "+str(yearBarSets[3][i])+" "+str(yearBarSets[4][i])+"\n")
+    print(str(yearBarSets[0][i])+" "+str(yearBarSets[1][i])+" "+str(yearBarSets[2][i])+" "+str(yearBarSets[3][i])+" "+str(yearBarSets[4][i])+" "+str(yearBarSets[5][i])+" "+str(yearBarSets[6][i])+"\n")
+
 hist = pygal.Histogram(legend_at_bottom=True)
-hist.add('3rd year| Total score: '+str(yearScores[3]), yearBarSets[3])
-hist.add('4th year| Total score: '+str(yearScores[4]), yearBarSets[4])
-hist.title = 'GitHub StarCount/Followers: Trinity CompSci'
+hist.add('3rd year| '+str(yearScores[3]), yearBarSets[3])
+hist.add('4th year| '+str(yearScores[4]), yearBarSets[4])
+for i in range(highlightCount):
+    hist.add(highlightedStudents[i]+'| '+str(highlightedScores[i]), yearBarSets[amountOfYears+i])
+hist.title = 'GitHub Scores: Trinity CompSci'
 hist.x_labels = ['']
 hist.render_to_file('histogram.svg')
