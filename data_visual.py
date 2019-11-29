@@ -1,3 +1,59 @@
+# Python program for implementation of Radix Sort
+
+# A function to do counting sort of arr[] according to
+# the digit represented by exp.
+def countingSort(arr, exp1, arrCopyChanges):
+
+    n = len(arr)
+
+    # The output array elements that will have sorted arr
+    output = [0] * (n)
+    outputCopyChages = [0] * (n)
+
+    # initialize count array as 0
+    count = [0] * (10)
+
+    # Store count of occurrences in count[]
+    for i in range(0, n):
+        index = (arr[i]/exp1)
+        count[ (index)%10 ] += 1
+
+    # Change count[i] so that count[i] now contains actual
+    #  position of this digit in output array
+    for i in range(1,10):
+        count[i] += count[i-1]
+
+    # Build the output array
+    i = n-1
+    while i>=0:
+        index = (arr[i]/exp1)
+        output[ count[ (index)%10 ] - 1] = arr[i]
+        outputCopyChages[ count[ (index)%10 ] - 1] = arrCopyChanges[i]
+        count[ (index)%10 ] -= 1
+        i -= 1
+
+    # Copying the output array to arr[],
+    # so that arr now contains sorted numbers
+    i = 0
+    for i in range(0,len(arr)):
+        arr[i] = output[i]
+        arrCopyChanges[i] = outputCopyChages[i]
+
+# Method to do Radix Sort
+def radixSort(arr, arrCopyChanges):
+
+    # Find the maximum number to know number of digits
+    max1 = max(arr)
+
+    # Do counting sort for every digit. Note that instead
+    # of passing digit number, exp is passed. exp is 10^i
+    # where i is current digit number
+    exp = 1
+    while max1/exp > 0:
+        countingSort(arr,exp,arrCopyChanges)
+        exp *= 10
+########################Above stolen from: www.geeksforgeeks.org/radix-sort
+
 import pygal
 import json
 import operator
@@ -21,7 +77,32 @@ maxHighlightable = 2
 widthHeightScaling = 0.02
 yearScores = [0,0,0,0,0] # year = offset
 
-with open('Data/GithubScores|2019-11-20|17:50:39.json') as json_file:
+######## USE EXTRACT ###############
+import extract
+####################################
+import os
+cwd = os.getcwd()+"/Data"
+
+from os import listdir
+from os.path import isfile, join
+onlyfiles = [f for f in listdir(cwd) if isfile(join(cwd, f))]
+comparableTimes = [0] * len(onlyfiles)
+i = 0
+for file in onlyfiles:
+    comparableTimes[i] = onlyfiles[i].replace('|', '')
+    comparableTimes[i] = comparableTimes[i].replace('.', '')
+    comparableTimes[i] = comparableTimes[i].replace(':', '')
+    comparableTimes[i] = comparableTimes[i].replace('-', '')
+    comparableTimes[i] = int(str(comparableTimes[i])[12:26])
+    #print(comparableTimes[i])
+    i+=1
+radixSort(comparableTimes, onlyfiles)
+
+# for i in range(len(comparableTimes)):
+#     print(str(comparableTimes[i])+" "+str(onlyfiles[i]))
+print(onlyfiles[15])
+
+with open('Data/'+onlyfiles[15]) as json_file:
     data = json.load(json_file)
     for entry in data['csStudents']:
         csStudent = CsStudent(entry['name'],entry['year'],int(entry['followers']),int(entry['starScore']))
@@ -67,8 +148,8 @@ for i in range(highlightCount):
     highlightedStudents[i] = str(sys.argv[i+1])
     #print(highlightedStudents[i])
 
-print("amountOfYears:"+str(amountOfYears))
-print("highlightCount"+str(highlightCount))
+#print("amountOfYears:"+str(amountOfYears))
+#print("highlightCount"+str(highlightCount))
 yearBarSets = [(0,0,0)] * (amountOfYears + 1 + highlightCount)
 for i in range(amountOfYears + 1 + highlightCount):
     yearBarSets[i] = [(0,0,0)] * amountOfStudents
@@ -92,8 +173,8 @@ for i in range(amountOfStudents):
     currentX += width
 
 
-for i in range(amountOfStudents):
-    print(str(yearBarSets[0][i])+" "+str(yearBarSets[1][i])+" "+str(yearBarSets[2][i])+" "+str(yearBarSets[3][i])+" "+str(yearBarSets[4][i])+" "+str(yearBarSets[5][i])+" "+str(yearBarSets[6][i])+"\n")
+#for i in range(amountOfStudents):
+#    print(str(yearBarSets[0][i])+" "+str(yearBarSets[1][i])+" "+str(yearBarSets[2][i])+" "+str(yearBarSets[3][i])+" "+str(yearBarSets[4][i])+" "+str(yearBarSets[5][i])+" "+str(yearBarSets[6][i])+"\n")
 
 hist = pygal.Histogram(legend_at_bottom=True)
 hist.add('3rd year| '+str(yearScores[3]), yearBarSets[3])
